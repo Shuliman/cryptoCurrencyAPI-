@@ -17,6 +17,7 @@ final class Version20231206CreateCurrencyRatesTable extends AbstractMigration
         $table->addColumn('low', 'decimal', ['precision' => 16, 'scale' => 8]);
         $table->addColumn('open', 'decimal', ['precision' => 16, 'scale' => 8]);
         $table->addColumn('close', 'decimal', ['precision' => 16, 'scale' => 8]);
+        $table->addColumn('volume_to', 'decimal', ['precision' => 16, 'scale' => 8]);
 
         $table->setPrimaryKey(['id']);
 
