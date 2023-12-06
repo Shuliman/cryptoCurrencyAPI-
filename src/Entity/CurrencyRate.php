@@ -29,6 +29,9 @@ class CurrencyRate
     /** @ORM\Column(type="decimal", precision=16, scale=8) */
     private $close;
 
+    /** @ORM\Column(type="decimal", precision=16, scale=8) */
+    private $volumeTo;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -39,15 +42,19 @@ class CurrencyRate
         return $this->time;
     }
 
+    public function getFormattedTime(): string
+    {
+        return date('Y-m-d H:i:s', $this->time);
+    }
+    public function getVolumeTo(): string
+    {
+        return $this->volumeTo;
+    }
+
     public function setTime(int $time): self
     {
         $this->time = $time;
         return $this;
-    }
-
-    public function getFormattedTime(): string
-    {
-        return date('Y-m-d H:i:s', $this->time);
     }
 
     public function setFormattedTime(string $formattedTime): self
@@ -97,6 +104,11 @@ class CurrencyRate
     public function setClose(string $close): self
     {
         $this->close = $close;
+        return $this;
+    }
+    public function setVolumeTo(string $volumeTo): self
+    {
+        $this->volumeTo = $volumeTo;
         return $this;
     }
 }
