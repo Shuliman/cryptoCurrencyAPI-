@@ -50,7 +50,7 @@ class CurrencyRate
     {
         return date('Y-m-d H:i:s', $this->time);
     }
-    public function getvolumeFrom(): string
+    public function getVolumeFrom(): string
     {
         return $this->volumeFrom;
     }
@@ -110,7 +110,7 @@ class CurrencyRate
         $this->close = $close;
         return $this;
     }
-    public function setvolumeFrom(string $volumeFrom): self
+    public function setVolumeFrom(string $volumeFrom): self
     {
         $this->volumeFrom = $volumeFrom;
         return $this;
