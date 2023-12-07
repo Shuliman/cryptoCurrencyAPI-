@@ -32,6 +32,9 @@ class CurrencyRate
     /** @ORM\Column(type="decimal", precision=16, scale=8) */
     private $volumeTo;
 
+    /** @ORM\Column(type="string", length=7) */
+    private $currencyPair;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -109,6 +112,16 @@ class CurrencyRate
     public function setVolumeTo(string $volumeTo): self
     {
         $this->volumeTo = $volumeTo;
+        return $this;
+    }
+    public function getCurrencyPair(): string
+    {
+        return $this->currencyPair;
+    }
+
+    public function setCurrencyPair(string $currencyPair): self
+    {
+        $this->currencyPair = $currencyPair;
         return $this;
     }
 }
