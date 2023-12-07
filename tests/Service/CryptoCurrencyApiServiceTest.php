@@ -1,6 +1,7 @@
 <?php
 namespace App\Tests\Service;
 
+use App\Factory\MockAPIDataFactory;
 use App\Service\CryptoCurrencyApiService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
@@ -22,15 +23,28 @@ class CryptoCurrencyApiServiceTest extends TestCase
 
     public function testSuccessfulApiResponse()
     {
-        $responseBody = json_encode(['Data' => 'some data']);
+        // Генерация моковых данных API
+        $mockApiResponse = MockAPIDataFactory::createMockApiResponse(5); // Генерация 5 элементов данных
+        $responseBody = json_encode($mockApiResponse);
         $response = new Response(200, [], $responseBody);
         $this->clientMock->method('request')->willReturn($response);
 
         $result = $this->service->getHistoricalData('BTC', 'USD', new \DateTime('-1 day'), new \DateTime());
 
         $this->assertTrue($result['success']);
-        $this->assertEquals('some data', $result['data']);
+        $this->assertCount(5, $result['data']);
+        foreach ($result['data'] as $item) {
+            $this->assertArrayHasKey('time', $item);
+            $this->assertArrayHasKey('high', $item);
+            $this->assertArrayHasKey('low', $item);
+            $this->assertArrayHasKey('open', $item);
+            $this->assertArrayHasKey('close', $item);
+            $this->assertArrayHasKey('volumefrom', $item);
+            $this->assertEquals('BTCUSD', $item['currency_pair']);
+        }
     }
+
+
 
 
     public function testApiError()
