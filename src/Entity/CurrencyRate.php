@@ -30,7 +30,7 @@ class CurrencyRate
     private $close;
 
     /** @ORM\Column(type="decimal", precision=16, scale=8) */
-    private $volumeTo;
+    private $volumeFrom;
 
     /** @ORM\Column(type="string", length=7) */
     private $currencyPair;
@@ -49,9 +49,9 @@ class CurrencyRate
     {
         return date('Y-m-d H:i:s', $this->time);
     }
-    public function getVolumeTo(): string
+    public function getvolumeFrom(): string
     {
-        return $this->volumeTo;
+        return $this->volumeFrom;
     }
 
     public function setTime(int $time): self
@@ -109,9 +109,9 @@ class CurrencyRate
         $this->close = $close;
         return $this;
     }
-    public function setVolumeTo(string $volumeTo): self
+    public function setvolumeFrom(string $volumeFrom): self
     {
-        $this->volumeTo = $volumeTo;
+        $this->volumeFrom = $volumeFrom;
         return $this;
     }
     public function getCurrencyPair(): string
