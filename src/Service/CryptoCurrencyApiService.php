@@ -4,9 +4,28 @@ namespace App\Service;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Psr\Log\LoggerInterface;
-
+/**
+ * Class CryptoCurrencyApiService
+ *
+ * This service is used to fetch historical data of a cryptocurrency pair from an API.
+ *
+ * @package App\Service
+ */
 class CryptoCurrencyApiService
 {
+    /**
+     * Fetches historical data of a cryptocurrency pair from an API.
+     *
+     * @param string $fsym The symbol of the first currency in the pair.
+     * @param string $tsym The symbol of the second currency in the pair.
+     * @param \DateTime $start The start date and time of the data.
+     * @param \DateTime $end The end date and time of the data.
+     *
+     * @return array An array containing the success status, the data, and any error message.
+     *
+     * @throws \Exception If the time difference between $start and $end is less than 1 hour, caused by API restrictions.
+     *
+     */
     private $client;
     private $apiBaseUrl;
     private $logger;
@@ -58,7 +77,18 @@ class CryptoCurrencyApiService
                 return $results;
             }
 
-            $results['data'] = $data['Data'];
+            $currencyPair = $fsym . $tsym;
+            $results['data'] = array_map(function ($item) use ($currencyPair) {
+                return [
+                    'time' => $item['time'],
+                    'high' => $item['high'],
+                    'low' => $item['low'],
+                    'open' => $item['open'],
+                    'close' => $item['close'],
+                    'volumefrom' => $item['volumefrom'],
+                    'currency_pair' => $currencyPair,
+                ];
+            }, $data['Data']);
             $results['success'] = true;
         } catch (GuzzleException $e) {
             $this->logger->error("HTTP request failed: " . $e->getMessage());

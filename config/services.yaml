@@ -7,6 +7,7 @@ parameters:
     crypto_compare_api_base_url: '%env(CRYPTO_COMPARE_API_BASE_URL)%'
 
 services:
+    App\Factory\MockDataFactory: ~
     # default configuration for services in *this* file
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
@@ -24,5 +25,10 @@ services:
         arguments:
             $apiBaseUrl: '%crypto_compare_api_base_url%'
             $client: '@GuzzleHttp\Client'
+    App\Service\CurrencyDataManagementService:
+        arguments:
+            $apiService: '@App\Service\CryptoCurrencyApiService'
+            $entityManager: '@doctrine.orm.entity_manager'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
