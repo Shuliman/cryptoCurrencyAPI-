@@ -46,9 +46,9 @@ class CurrencyRate
         return $this->time;
     }
 
-    public function getFormattedTime(): string
+    public function getFormattedTime(): ?\DateTime
     {
-        return date('Y-m-d H:i:s', $this->time);
+        return ($this->time !== null) ? (new \DateTime())->setTimestamp($this->time) : null;
     }
     public function getVolumeFrom(): string
     {
@@ -61,9 +61,9 @@ class CurrencyRate
         return $this;
     }
 
-    public function setFormattedTime(string $formattedTime): self
+    public function setFormattedTime(\DateTime $dateTime): self
     {
-        $this->time = strtotime($formattedTime);
+        $this->time = $dateTime->getTimestamp();
         return $this;
     }
 
