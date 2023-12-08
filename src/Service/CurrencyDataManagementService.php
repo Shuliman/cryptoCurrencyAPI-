@@ -29,31 +29,51 @@ class CurrencyDataManagementService
         if (empty($missingIntervals)) {
             return $this->getDataFromDb($fsym, $tsym, $start, $end);
         }
+
         foreach ($missingIntervals as $interval) {
-            $apiResult = $this->apiService->getHistoricalData($fsym, $tsym, new \DateTime($interval['start']), new \DateTime($interval['end']));
-            if ($apiResult['success']) {
-                $this->entityManager->beginTransaction();
-                try {
-                    $this->saveDataToDb($apiResult['data'], $fsym, $tsym);
-                    $this->entityManager->commit();
-                } catch (\Exception $e) {
-                    $this->entityManager->rollback();
-                    $this->logger->error("Database error: " . $e->getMessage());
-                }
-            } else {
-                $this->logger->error("API error: " . $apiResult['error']);
+            try {
+                $this->processInterval($interval, $fsym, $tsym);
+            } catch (\Exception $e) {
+                $this->logger->error("Error processing interval: " . $e->getMessage());
+                throw $e;
             }
         }
 
         return $this->getDataFromDb($fsym, $tsym, $start, $end);
     }
 
+    /**
+     * @throws \Exception
+     */
+    private function processInterval($interval, $fsym, $tsym): void
+    {
+        $apiResult = $this->apiService->getHistoricalData($fsym, $tsym, new \DateTime($interval['start']), new \DateTime($interval['end']));
+        if ($apiResult['success']) {
+            $this->entityManager->beginTransaction();
+            try {
+                $this->saveDataToDb($apiResult['data'], $fsym, $tsym);
+                $this->entityManager->commit();
+            } catch (\Exception $e) {
+                $this->entityManager->rollback();
+                $this->logger->error("Database error: " . $e->getMessage());
+                throw $e;
+            }
+        } else {
+            $this->logger->error("API error: " . $apiResult['error']);
+            throw new \Exception("API error: " . $apiResult['error']);
+        }
+    }
+
+
     private function getMissingIntervals(string $fsym, string $tsym, \DateTime $start, \DateTime $end): array
     {
         $existingData = $this->getDataFromDb($fsym, $tsym, $start, $end);
         $existingIntervals = [];
         foreach ($existingData as $dataItem) {
-            $existingIntervals[] = ['start' => $dataItem->getTime()->format('Y-m-d H:i:s'), 'end' => (clone $dataItem->getTime())->modify('+1 hour')->format('Y-m-d H:i:s')];
+            $existingIntervals[] = [
+                'start' => $dataItem->getFormattedTime()->format('Y-m-d H:i:s'),
+                'end' => (clone $dataItem->getFormattedTime())->modify('+1 hour')->format('Y-m-d H:i:s')
+            ];
         }
 
         $missingIntervals = [];
