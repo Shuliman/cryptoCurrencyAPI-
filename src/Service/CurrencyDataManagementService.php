@@ -3,6 +3,8 @@ namespace App\Service;
 
 use App\Entity\CurrencyRate;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\ORM\NoResultException;
 use Psr\Log\LoggerInterface;
 
 class CurrencyDataManagementService
@@ -30,7 +32,14 @@ class CurrencyDataManagementService
         foreach ($missingIntervals as $interval) {
             $apiResult = $this->apiService->getHistoricalData($fsym, $tsym, new \DateTime($interval['start']), new \DateTime($interval['end']));
             if ($apiResult['success']) {
-                $this->saveDataToDb($apiResult['data'], $fsym, $tsym);
+                $this->entityManager->beginTransaction();
+                try {
+                    $this->saveDataToDb($apiResult['data'], $fsym, $tsym);
+                    $this->entityManager->commit();
+                } catch (\Exception $e) {
+                    $this->entityManager->rollback();
+                    $this->logger->error("Database error: " . $e->getMessage());
+                }
             } else {
                 $this->logger->error("API error: " . $apiResult['error']);
             }
@@ -38,13 +47,20 @@ class CurrencyDataManagementService
 
         return $this->getDataFromDb($fsym, $tsym, $start, $end);
     }
+
     private function getMissingIntervals(string $fsym, string $tsym, \DateTime $start, \DateTime $end): array
     {
+        $existingData = $this->getDataFromDb($fsym, $tsym, $start, $end);
+        $existingIntervals = [];
+        foreach ($existingData as $dataItem) {
+            $existingIntervals[] = ['start' => $dataItem->getTime()->format('Y-m-d H:i:s'), 'end' => (clone $dataItem->getTime())->modify('+1 hour')->format('Y-m-d H:i:s')];
+        }
+
         $missingIntervals = [];
         $current = clone $start;
         while ($current < $end) {
             $nextHour = (clone $current)->modify('+1 hour');
-            if (!$this->dataExistsInDb($fsym, $tsym, $current, $nextHour)) {
+            if (!in_array(['start' => $current->format('Y-m-d H:i:s'), 'end' => $nextHour->format('Y-m-d H:i:s')], $existingIntervals)) {
                 $missingIntervals[] = ['start' => $current->format('Y-m-d H:i:s'), 'end' => $nextHour->format('Y-m-d H:i:s')];
             }
             $current = $nextHour;
@@ -67,6 +83,11 @@ class CurrencyDataManagementService
 
         return $query->getResult();
     }
+
+    /**
+     * @throws NonUniqueResultException
+     * @throws NoResultException
+     */
     private function dataExistsInDb(string $fsym, string $tsym, \DateTime $start, \DateTime $end): bool
     {
         $qb = $this->entityManager->createQueryBuilder();
@@ -77,7 +98,10 @@ class CurrencyDataManagementService
             ->setParameter('start', $start->getTimestamp())
             ->setParameter('end', $end->getTimestamp());
 
-        $count = $qb->getQuery()->getSingleScalarResult();
+        try {
+            $count = $qb->getQuery()->getSingleScalarResult();
+        } catch (NoResultException|NonUniqueResultException $e) {
+        }
         return $count > 0;
     }
 
