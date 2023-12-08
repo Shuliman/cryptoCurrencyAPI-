@@ -7,6 +7,7 @@ parameters:
     crypto_compare_api_base_url: '%env(CRYPTO_COMPARE_API_BASE_URL)%'
 
 services:
+    GuzzleHttp\Client: ~
     App\Factory\MockDataFactory: ~
     # default configuration for services in *this* file
     _defaults:
