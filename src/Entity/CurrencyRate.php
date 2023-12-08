@@ -2,38 +2,34 @@
 namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity
- * @ORM\Table(name="currency_rates")
- */
+#[ORM\Entity]
+#[ORM\Table(name: "currency_rates")]
 class CurrencyRate
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     private $id;
 
-    /** @ORM\Column(type="integer") */
+    #[ORM\Column(type: "integer")]
     private $time;
 
-    /** @ORM\Column(type="decimal", precision=16, scale=8) */
+    #[ORM\Column(type: "decimal", precision: 16, scale: 8)]
     private $high;
 
-    /** @ORM\Column(type="decimal", precision=16, scale=8) */
+    #[ORM\Column(type: "decimal", precision: 16, scale: 8)]
     private $low;
 
-    /** @ORM\Column(type="decimal", precision=16, scale=8) */
+    #[ORM\Column(type: "decimal", precision: 16, scale: 8)]
     private $open;
 
-    /** @ORM\Column(type="decimal", precision=16, scale=8) */
+    #[ORM\Column(type: "decimal", precision: 16, scale: 8)]
     private $close;
 
-    /** @ORM\Column(type="decimal", precision=16, scale=8) */
+    #[ORM\Column(type: "decimal", precision: 16, scale: 8)]
     private $volumeFrom;
 
-    /** @ORM\Column(type="string", length=7) */
+    #[ORM\Column(type: "string", length: 7)]
     private $currencyPair;
 
     public function getId(): ?int
