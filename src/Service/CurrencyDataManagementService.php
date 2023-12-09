@@ -6,13 +6,34 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\NoResultException;
 use Psr\Log\LoggerInterface;
-
+/**
+ * Service class for managing currency data.
+ * Handles interactions with cryptocurrency API, database operations, and logging.
+ */
 class CurrencyDataManagementService
 {
+    /**
+     * @var CryptoCurrencyApiService The service for interacting with the cryptocurrency API.
+     */
     private $apiService;
+
+    /**
+     * @var EntityManagerInterface The entity manager for database operations.
+     */
     private $entityManager;
+
+    /**
+     * @var LoggerInterface The logging service.
+     */
     private $logger;
 
+    /**
+     * Constructor to initialize the service with necessary dependencies.
+     *
+     * @param CryptoCurrencyApiService $apiService The cryptocurrency API service.
+     * @param EntityManagerInterface $entityManager The Doctrine entity manager.
+     * @param LoggerInterface $logger The logger service.
+     */
     public function __construct(CryptoCurrencyApiService $apiService, EntityManagerInterface $entityManager, LoggerInterface $logger)
     {
         $this->apiService = $apiService;
@@ -21,7 +42,14 @@ class CurrencyDataManagementService
     }
 
     /**
-     * @throws \Exception
+     * Updates and retrieves currency data for a given period and currency pair.
+     *
+     * @param \DateTime $start The start date of the interval.
+     * @param \DateTime $end The end date of the interval.
+     * @param string $fsym The symbol of the from currency.
+     * @param string $tsym The symbol of the to currency.
+     * @return array The array of currency data.
+     * @throws \Exception If there is an error processing the interval.
      */
     public function updateAndRetrieveData(\DateTime $start, \DateTime $end, string $fsym, string $tsym): array
     {
@@ -43,7 +71,12 @@ class CurrencyDataManagementService
     }
 
     /**
-     * @throws \Exception
+     * Processes a single time interval for currency data.
+     *
+     * @param array $interval The interval to process.
+     * @param string $fsym The symbol of the from currency.
+     * @param string $tsym The symbol of the to currency.
+     * @throws \Exception If an error occurs during processing.
      */
     private function processInterval($interval, $fsym, $tsym): void
     {
@@ -64,7 +97,15 @@ class CurrencyDataManagementService
         }
     }
 
-
+    /**
+     * Identifies missing intervals of data between two dates.
+     *
+     * @param string $fsym The symbol of the from currency.
+     * @param string $tsym The symbol of the to currency.
+     * @param \DateTime $start The start date of the interval.
+     * @param \DateTime $end The end date of the interval.
+     * @return array An array of missing intervals.
+     */
     private function getMissingIntervals(string $fsym, string $tsym, \DateTime $start, \DateTime $end): array
     {
         $existingData = $this->getDataFromDb($fsym, $tsym, $start, $end);
@@ -87,6 +128,15 @@ class CurrencyDataManagementService
         }
         return $missingIntervals;
     }
+    /**
+     * Retrieves data from the database for a specific currency pair and time interval.
+     *
+     * @param string $fsym The symbol of the from currency.
+     * @param string $tsym The symbol of the to currency.
+     * @param \DateTime $start The start date of the interval.
+     * @param \DateTime $end The end date of the interval.
+     * @return array An array of CurrencyRate entities.
+     */
     private function getDataFromDb(string $fsym, string $tsym, \DateTime $start, \DateTime $end): array
     {
         $queryBuilder = $this->entityManager->createQueryBuilder();
@@ -105,8 +155,14 @@ class CurrencyDataManagementService
     }
 
     /**
-     * @throws NonUniqueResultException
-     * @throws NoResultException
+     * Checks if data for a specific currency pair and time interval exists in the database.
+     *
+     * @param string $fsym The symbol of the from currency.
+     * @param string $tsym The symbol of the to currency.
+     * @param \DateTime $start The start date of the interval.
+     * @param \DateTime $end The end date of the interval.
+     * @return bool True if data exists, false otherwise.
+     * @throws NonUniqueResultException|NoResultException If the query result is non-unique or no result is found.
      */
     private function dataExistsInDb(string $fsym, string $tsym, \DateTime $start, \DateTime $end): bool
     {
@@ -124,7 +180,13 @@ class CurrencyDataManagementService
         }
         return $count > 0;
     }
-
+    /**
+     * Saves currency data to the database.
+     *
+     * @param array $data The array of currency data to save.
+     * @param string $fsym The symbol of the from currency.
+     * @param string $tsym The symbol of the to currency.
+     */
     private function saveDataToDb(array $data, string $fsym, string $tsym): void
     {
         foreach ($data as $dataItem) {
