@@ -23,8 +23,7 @@ class CryptoCurrencyApiServiceTest extends TestCase
 
     public function testSuccessfulApiResponse()
     {
-        // Генерация моковых данных API
-        $mockApiResponse = MockAPIDataFactory::createMockApiResponse(5); // Генерация 5 элементов данных
+        $mockApiResponse = MockAPIDataFactory::createMockApiResponse(5);
         $responseBody = json_encode($mockApiResponse);
         $response = new Response(200, [], $responseBody);
         $this->clientMock->method('request')->willReturn($response);
