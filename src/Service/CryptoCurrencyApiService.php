@@ -61,7 +61,7 @@ class CryptoCurrencyApiService
             'fsym' => $fsym,
             'tsym' => $tsym,
             'toTs' => $end->getTimestamp(),
-            'limit' => (int) $hoursDiff - 1
+            'limit' => $hoursDiff > 1 ? (int) $hoursDiff - 1 : 1
         ];
 
         try {

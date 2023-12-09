@@ -128,6 +128,10 @@ class CurrencyDataManagementService
     private function saveDataToDb(array $data, string $fsym, string $tsym): void
     {
         foreach ($data as $dataItem) {
+            if ($this->dataExistsInDb($fsym, $tsym, (new \DateTime())->setTimestamp($dataItem['time']), (new \DateTime())->setTimestamp($dataItem['time']))) {
+                $this->logger->info("Data for timestamp {$dataItem['time']} already exists. Skipping.");
+                continue;
+            }
             $currencyRate = new CurrencyRate();
             $currencyRate->setTime($dataItem['time'])
                 ->setHigh($dataItem['high'])
@@ -138,6 +142,7 @@ class CurrencyDataManagementService
                 ->setCurrencyPair($fsym . $tsym);
 
             $this->entityManager->persist($currencyRate);
+            $this->logger->info("Saving new data for timestamp {$dataItem['time']}");
         }
         $this->entityManager->flush();
     }
