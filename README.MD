@@ -5,7 +5,6 @@ This web application provides an API for retrieving cryptocurrency rates, specif
 
 ## Features
 - Retrieve BTC/USD, BTC/EUR, and more currency pair rates.
-- Hourly updates of exchange rates.
 - Option to modify the range of data retrieval.
 
 ## Technologies Used
