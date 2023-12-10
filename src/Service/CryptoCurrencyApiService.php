@@ -55,13 +55,13 @@ class CryptoCurrencyApiService
         // Computing amount of hours for setting limit
         $hoursDiff = ($end->getTimestamp() - $start->getTimestamp()) / 3600;
         if ($hoursDiff < 1) {
-            throw new \Exception("The time difference must be at least 1 hour.");
+            $hoursDiff = 1;
         }
         $queryParams = [
             'fsym' => $fsym,
             'tsym' => $tsym,
             'toTs' => $end->getTimestamp(),
-            'limit' => $hoursDiff > 1 ? (int) $hoursDiff - 1 : 1
+            'limit' => $hoursDiff
         ];
 
         try {
