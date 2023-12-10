@@ -80,6 +80,7 @@ class CurrencyDataManagementService
      */
     private function processInterval($interval, $fsym, $tsym): void
     {
+        sleep(1);
         $apiResult = $this->apiService->getHistoricalData($fsym, $tsym, new \DateTime($interval['start']), new \DateTime($interval['end']));
         if ($apiResult['success']) {
             $this->entityManager->beginTransaction();
