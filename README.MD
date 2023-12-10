@@ -1,4 +1,51 @@
-# Currency Data API
+# Crypto Currency Exchange API
+
+## Overview
+This web application provides an API for retrieving cryptocurrency rates, specifically for Bitcoin (BTC) against various currencies like USD, EUR, etc. The API allows fetching exchange rate data hourly and supports adjustable data range outputs, catering to use cases such as cryptocurrency rate chart plotting.
+
+## Features
+- Retrieve BTC/USD, BTC/EUR, and more currency pair rates.
+- Hourly updates of exchange rates.
+- Option to modify the range of data retrieval.
+
+## Technologies Used
+- Symfony 7
+- PHP 8.2
+- MySQL 8
+
+## Installation
+
+### Prerequisites
+- PHP 8.2 or higher
+- MySQL 8
+- Composer
+
+### Steps
+1. Clone the repository:
+   `git clone https://github.com/Shuliman/cryptoCurrencyAPI-.git`
+   `cd cryptoCurrencyAPI`
+
+
+2. Install dependencies:
+   `composer install`
+
+3. Set up environment variables:
+- Configure the `.env` file with your database and API settings.
+
+4. Database setup:
+- Create a MySQL database named `crypto_currency`.
+- Run migrations:
+  ```
+  php bin/console doctrine:migrations:migrate
+  ```
+
+## Running the Application
+Start the Symfony server using:
+`symfony serve`
+
+Access the application at `http://127.0.0.1:8000` (or the port indicated in your terminal).
+
+## API Usage
 
 Currency Data API provides access to currency exchange rate data. The API includes several endpoints to retrieve data for different time intervals.
 
