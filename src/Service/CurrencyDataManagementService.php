@@ -40,24 +40,19 @@ class CurrencyDataManagementService
         $this->entityManager = $entityManager;
         $this->logger = $logger;
     }
-
     /**
-     * Updates and retrieves currency data for a given period and currency pair.
+     * Updates currency data for the given period and currency pair.
+     * This method calls `processInterval` for each missing time interval.
      *
-     * @param \DateTime $start The start date of the interval.
-     * @param \DateTime $end The end date of the interval.
-     * @param string $fsym The symbol of the from currency.
-     * @param string $tsym The symbol of the to currency.
-     * @return array The array of currency data.
-     * @throws \Exception If there is an error processing the interval.
+     * @param \DateTime $start The starting date of the interval.
+     * @param \DateTime $end End date of the interval.
+     * @param string $fsym Source currency symbol.
+     * @param string $tsym Target currency symbol.
+     * @throws \Exception If an error occurs while processing the interval.
      */
-    public function updateAndRetrieveData(\DateTime $start, \DateTime $end, string $fsym, string $tsym): array
+    public function updateData(\DateTime $start, \DateTime $end, string $fsym, string $tsym): void
     {
         $missingIntervals = $this->getMissingIntervals($fsym, $tsym, $start, $end);
-        if (empty($missingIntervals)) {
-            return $this->getDataFromDb($fsym, $tsym, $start, $end);
-        }
-
         foreach ($missingIntervals as $interval) {
             try {
                 $this->processInterval($interval, $fsym, $tsym);
@@ -66,9 +61,38 @@ class CurrencyDataManagementService
                 throw $e;
             }
         }
-
+    }
+    /**
+     * Gets currency data from the database for a given period and currency pair.
+     * Returns an array of currency data from the database.
+     *
+     * @param \DateTime $start Start date of the interval.
+     * @param \DateTime $end End date of the interval.
+     * @param string $fsym Source currency symbol.
+     * @param string $tsym Target currency symbol.
+     * @return array Array of currency data.
+     */
+    public function retrieveData(\DateTime $start, \DateTime $end, string $fsym, string $tsym): array
+    {
         return $this->getDataFromDb($fsym, $tsym, $start, $end);
     }
+    /**
+     * getCurrencys that coordinates updating and retrieving currency data.
+     * First updates the data, then retrieves it from the database.
+     *
+     * @param \DateTime $start Start date of the interval.
+     * @param \DateTime $end End date of the interval.
+     * @param string $fsym Source currency symbol.
+     * @param string $tsym Target currency symbol.
+     * @return array Array of currency data.
+     * @throws \Exception If an error occurs while processing or extracting the currency data.
+     */
+    public function getCurrencys(\DateTime $start, \DateTime $end, string $fsym, string $tsym): array
+    {
+        $this->updateData($start, $end, $fsym, $tsym);
+        return $this->retrieveData($start, $end, $fsym, $tsym);
+    }
+
 
     /**
      * Processes a single time interval for currency data.

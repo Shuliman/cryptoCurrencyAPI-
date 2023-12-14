@@ -43,7 +43,7 @@ class CurrencyDataController extends AbstractController
         $end = (clone $start)->modify('+1 hour');
 
         try {
-            $data = $this->currencyDataManagementService->updateAndRetrieveData($start, $end, $fsym, $tsym);
+            $data = $this->currencyDataManagementService->getCurrencys($start, $end, $fsym, $tsym);
 
             // Filter out data outside the specific hour, if necessary
             if (count($data) > 1) {
@@ -79,7 +79,7 @@ class CurrencyDataController extends AbstractController
         try {
             $start = new \DateTime($date);
             $end = (clone $start)->modify('+1 day');
-            $data = $this->currencyDataManagementService->updateAndRetrieveData($start, $end, $fsym, $tsym);
+            $data = $this->currencyDataManagementService->getCurrencys($start, $end, $fsym, $tsym);
             return $this->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()]);
@@ -108,7 +108,7 @@ class CurrencyDataController extends AbstractController
             $end = (clone $start)->modify('+7 day');
 
             // Retrieving and returning the data
-            $data = $this->currencyDataManagementService->updateAndRetrieveData($start, $end, $fsym, $tsym);
+            $data = $this->currencyDataManagementService->getCurrencys($start, $end, $fsym, $tsym);
             return $this->json(['success' => true, 'data' => $data]);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()]);
