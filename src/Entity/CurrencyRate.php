@@ -44,7 +44,7 @@ class CurrencyRate
 
     public function getFormattedTime(): ?\DateTime
     {
-        return ($this->time !== null) ? (new \DateTime())->setTimestamp($this->time) : null;
+        return ($this->time !== null) ? \DateTime::createFromFormat('U', $this->time) : null;
     }
     public function getVolumeFrom(): string
     {
