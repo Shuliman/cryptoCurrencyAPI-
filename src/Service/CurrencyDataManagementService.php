@@ -5,6 +5,7 @@ use App\Entity\CurrencyRate;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\NoResultException;
+use Ds\Set;
 use Psr\Log\LoggerInterface;
 use App\Repository\CurrencyRateRepository;
 /**
@@ -14,38 +15,20 @@ use App\Repository\CurrencyRateRepository;
 class CurrencyDataManagementService
 {
     /**
-     * @var CryptoCurrencyApiService The service for interacting with the cryptocurrency API.
-     */
-    private $apiService;
-
-    /**
-     * @var EntityManagerInterface The entity manager for database operations.
-     */
-    private $entityManager;
-    private $currencyRateRepository;
-
-    /**
-     * @var LoggerInterface The logging service.
-     */
-    private $logger;
-
-    /**
      * Constructor to initialize the service with necessary dependencies.
      *
      * @param CryptoCurrencyApiService $apiService The cryptocurrency API service.
      * @param CurrencyRateRepository $currencyRateRepository The Repository data getting manager.
+     * @param EntityManagerInterface $entityManager The entity manager for database operations.
      * @param LoggerInterface $logger The logger service.
      */
     public function __construct(
-        CryptoCurrencyApiService $apiService,
-        CurrencyRateRepository $currencyRateRepository,
-        EntityManagerInterface $entityManager,
-        LoggerInterface $logger
-    ) {
-        $this->apiService = $apiService;
-        $this->currencyRateRepository = $currencyRateRepository;
-        $this->entityManager = $entityManager;
-        $this->logger = $logger;
+        private CryptoCurrencyApiService $apiService,
+        private CurrencyRateRepository   $currencyRateRepository,
+        private EntityManagerInterface   $entityManager,
+        private LoggerInterface          $logger
+    )
+    {
     }
     /**
      * Updates currency data for the given period and currency pair.
@@ -135,24 +118,33 @@ class CurrencyDataManagementService
      */
     private function getMissingIntervals(string $fsym, string $tsym, \DateTime $start, \DateTime $end): array
     {
+        // Getting data from the database
         $existingData = $this->getDataFromDb($fsym, $tsym, $start, $end);
-        $existingIntervals = [];
+
+        // Initialize hash set for existing intervals
+        $existingIntervals = new Set();
         foreach ($existingData as $dataItem) {
-            $existingIntervals[] = [
-                'start' => $dataItem->getFormattedTime()->format('Y-m-d H:i:s'),
-                'end' => (clone $dataItem->getFormattedTime())->modify('+1 hour')->format('Y-m-d H:i:s')
-            ];
+            // Add a timestamp to the hash set
+            $existingIntervals->add($dataItem->getFormattedTime()->format('Y-m-d H:i:s'));
         }
 
         $missingIntervals = [];
-        $current = clone $start;
-        while ($current < $end) {
-            $nextHour = (clone $current)->modify('+1 hour');
-            if (!in_array(['start' => $current->format('Y-m-d H:i:s'), 'end' => $nextHour->format('Y-m-d H:i:s')], $existingIntervals)) {
-                $missingIntervals[] = ['start' => $current->format('Y-m-d H:i:s'), 'end' => $nextHour->format('Y-m-d H:i:s')];
+        // Create an interval of one hour
+        $interval = new \DateInterval('PT1H');
+        // Create a time period from start to end in one hour increments
+        $period = new \DatePeriod($start, $interval, $end);
+
+        // Check every hour interval
+        foreach ($period as $dt) {
+            $startStr = $dt->format('Y-m-d H:i:s');
+            $endStr = $dt->add($interval)->format('Y-m-d H:i:s');
+
+            // Check if there is no interval in the existing data
+            if (!$existingIntervals->contains($startStr)) {
+                $missingIntervals[] = ['start' => $startStr, 'end' => $endStr];
             }
-            $current = $nextHour;
         }
+
         return $missingIntervals;
     }
     /**
