@@ -22,6 +22,8 @@ services:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
+    App\Service\DataSaverInterface: '@App\Service\DataSaverService'
+
     App\Service\CryptoCurrencyApiService:
         arguments:
             $apiBaseUrl: '%crypto_compare_api_base_url%'
@@ -29,7 +31,13 @@ services:
     App\Service\CurrencyDataManagementService:
         arguments:
             $apiService: '@App\Service\CryptoCurrencyApiService'
+            $currencyRateRepository: '@App\Repository\CurrencyRateRepository'
             $entityManager: '@doctrine.orm.entity_manager'
+            $dataSaver: '@App\Service\Interface\DataSaverInterface'
+    App\Service\DataSaverService:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+            $currencyRateRepository: '@App\Repository\CurrencyRateRepository'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
