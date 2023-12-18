@@ -3,8 +3,6 @@ namespace App\Service;
 
 use App\Entity\CurrencyRate;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\NonUniqueResultException;
-use Doctrine\ORM\NoResultException;
 use Ds\Set;
 use Psr\Log\LoggerInterface;
 use App\Repository\CurrencyRateRepository;
@@ -52,19 +50,6 @@ class CurrencyDataManagementService
         }
     }
     /**
-     * Gets currency data from the database for a given period and currency pair.
-     * Returns an array of currency data from the database.
-     *
-     * @param \DateTime $start Start date of the interval.
-     * @param \DateTime $end End date of the interval.
-     * @param string $fsym Source currency symbol.
-     * @param string $tsym Target currency symbol.
-     * @return array Array of currency data.
-     */
-    public function retrieveData(\DateTime $start, \DateTime $end, string $fsym, string $tsym): array {
-        return $this->currencyRateRepository->findCurrencyData($fsym, $tsym, $start, $end);
-    }
-    /**
      * getCurrencys that coordinates updating and retrieving currency data.
      * First updates the data, then retrieves it from the database.
      *
@@ -77,7 +62,7 @@ class CurrencyDataManagementService
      */
     public function getCurrencys(\DateTime $start, \DateTime $end, string $fsym, string $tsym): array {
         $this->updateData($start, $end, $fsym, $tsym);
-        return $this->retrieveData($start, $end, $fsym, $tsym);
+        return $this->currencyRateRepository->findCurrencyData($fsym, $tsym, $start, $end);
     }
     /**
      * Processes a single time interval for currency data.
@@ -119,7 +104,7 @@ class CurrencyDataManagementService
     private function getMissingIntervals(string $fsym, string $tsym, \DateTime $start, \DateTime $end): array
     {
         // Getting data from the database
-        $existingData = $this->getDataFromDb($fsym, $tsym, $start, $end);
+        $existingData = $this->currencyRateRepository->findCurrencyData($fsym, $tsym, $start, $end);
 
         // Initialize hash set for existing intervals
         $existingIntervals = new Set();
@@ -148,33 +133,6 @@ class CurrencyDataManagementService
         return $missingIntervals;
     }
     /**
-     * Retrieves data from the database for a specific currency pair and time interval.
-     *
-     * @param string $fsym The symbol of the from currency.
-     * @param string $tsym The symbol of the to currency.
-     * @param \DateTime $start The start date of the interval.
-     * @param \DateTime $end The end date of the interval.
-     * @return array An array of CurrencyRate entities.
-     */
-    private function getDataFromDb(string $fsym, string $tsym, \DateTime $start, \DateTime $end): array {
-        return $this->currencyRateRepository->findCurrencyData($fsym, $tsym, $start, $end);
-    }
-
-    /**
-     * Checks if data for a specific currency pair and time interval exists in the database.
-     *
-     * @param string $fsym The symbol of the from currency.
-     * @param string $tsym The symbol of the to currency.
-     * @param \DateTime $start The start date of the interval.
-     * @param \DateTime $end The end date of the interval.
-     * @return bool True if data exists, false otherwise.
-     * @throws NonUniqueResultException|NoResultException If the query result is non-unique or no result is found.
-     */
-    private function dataExistsInDb(string $fsym, string $tsym, \DateTime $start, \DateTime $end): bool
-    {
-        return $this->currencyRateRepository->dataExists($fsym, $tsym, $start, $end);
-    }
-    /**
      * Saves currency data to the database.
      *
      * @param array $data The array of currency data to save.
@@ -183,7 +141,7 @@ class CurrencyDataManagementService
      */
     private function saveDataToDb(array $data, string $fsym, string $tsym): void {
         foreach ($data as $dataItem) {
-            if (!$this->dataExistsInDb($fsym, $tsym, (new \DateTime())->setTimestamp($dataItem['time']), (new \DateTime())->setTimestamp($dataItem['time']))) {
+            if (!$this->currencyRateRepository->dataExists($fsym, $tsym, (new \DateTime())->setTimestamp($dataItem['time']), (new \DateTime())->setTimestamp($dataItem['time']))) {
                 $currencyRate = new CurrencyRate();
                 $currencyRate->setTime($dataItem['time'])
                     ->setHigh($dataItem['high'])

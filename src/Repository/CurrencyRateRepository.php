@@ -14,6 +14,15 @@ class CurrencyRateRepository extends ServiceEntityRepository
         parent::__construct($registry, CurrencyRate::class);
     }
 
+    /**
+     * Retrieves data from the database for a specific currency pair and time interval.
+     *
+     * @param string $fsym The symbol of the from currency.
+     * @param string $tsym The symbol of the to currency.
+     * @param \DateTime $start The start date of the interval.
+     * @param \DateTime $end The end date of the interval.
+     * @return array An array of CurrencyRate entities.
+     */
     public function findCurrencyData(string $fsym, string $tsym, \DateTime $start, \DateTime $end): array
     {
         $qb = $this->createQueryBuilder('cr')
@@ -21,11 +30,22 @@ class CurrencyRateRepository extends ServiceEntityRepository
             ->andWhere('cr.time BETWEEN :start AND :end')
             ->setParameter('currencyPair', $fsym . $tsym)
             ->setParameter('start', $start->getTimestamp())
-            ->setParameter('end', $end->getTimestamp());
+            ->setParameter('end', $end->getTimestamp())
+            ->orderBy('cr.time', 'ASC');
 
         return $qb->getQuery()->getResult();
     }
 
+    /**
+     * Checks if data for a specific currency pair and time interval exists in the database.
+     *
+     * @param string $fsym The symbol of the from currency.
+     * @param string $tsym The symbol of the to currency.
+     * @param \DateTime $start The start date of the interval.
+     * @param \DateTime $end The end date of the interval.
+     * @return bool True if data exists, false otherwise.
+     * @throws NonUniqueResultException|NoResultException If the query result is non-unique or no result is found.
+     */
     public function dataExists(string $fsym, string $tsym, \DateTime $start, \DateTime $end): bool
     {
         $qb = $this->createQueryBuilder('cr')
