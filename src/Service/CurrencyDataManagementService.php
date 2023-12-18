@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\NoResultException;
 use Psr\Log\LoggerInterface;
+use App\Repository\CurrencyRateRepository;
 /**
  * Service class for managing currency data.
  * Handles interactions with cryptocurrency API, database operations, and logging.
@@ -21,6 +22,7 @@ class CurrencyDataManagementService
      * @var EntityManagerInterface The entity manager for database operations.
      */
     private $entityManager;
+    private $currencyRateRepository;
 
     /**
      * @var LoggerInterface The logging service.
@@ -31,12 +33,17 @@ class CurrencyDataManagementService
      * Constructor to initialize the service with necessary dependencies.
      *
      * @param CryptoCurrencyApiService $apiService The cryptocurrency API service.
-     * @param EntityManagerInterface $entityManager The Doctrine entity manager.
+     * @param CurrencyRateRepository $currencyRateRepository The Repository data getting manager.
      * @param LoggerInterface $logger The logger service.
      */
-    public function __construct(CryptoCurrencyApiService $apiService, EntityManagerInterface $entityManager, LoggerInterface $logger)
-    {
+    public function __construct(
+        CryptoCurrencyApiService $apiService,
+        CurrencyRateRepository $currencyRateRepository,
+        EntityManagerInterface $entityManager,
+        LoggerInterface $logger
+    ) {
         $this->apiService = $apiService;
+        $this->currencyRateRepository = $currencyRateRepository;
         $this->entityManager = $entityManager;
         $this->logger = $logger;
     }
@@ -50,8 +57,7 @@ class CurrencyDataManagementService
      * @param string $tsym Target currency symbol.
      * @throws \Exception If an error occurs while processing the interval.
      */
-    public function updateData(\DateTime $start, \DateTime $end, string $fsym, string $tsym): void
-    {
+    public function updateData(\DateTime $start, \DateTime $end, string $fsym, string $tsym): void {
         $missingIntervals = $this->getMissingIntervals($fsym, $tsym, $start, $end);
         foreach ($missingIntervals as $interval) {
             try {
@@ -72,9 +78,8 @@ class CurrencyDataManagementService
      * @param string $tsym Target currency symbol.
      * @return array Array of currency data.
      */
-    public function retrieveData(\DateTime $start, \DateTime $end, string $fsym, string $tsym): array
-    {
-        return $this->getDataFromDb($fsym, $tsym, $start, $end);
+    public function retrieveData(\DateTime $start, \DateTime $end, string $fsym, string $tsym): array {
+        return $this->currencyRateRepository->findCurrencyData($fsym, $tsym, $start, $end);
     }
     /**
      * getCurrencys that coordinates updating and retrieving currency data.
@@ -87,13 +92,10 @@ class CurrencyDataManagementService
      * @return array Array of currency data.
      * @throws \Exception If an error occurs while processing or extracting the currency data.
      */
-    public function getCurrencys(\DateTime $start, \DateTime $end, string $fsym, string $tsym): array
-    {
+    public function getCurrencys(\DateTime $start, \DateTime $end, string $fsym, string $tsym): array {
         $this->updateData($start, $end, $fsym, $tsym);
         return $this->retrieveData($start, $end, $fsym, $tsym);
     }
-
-
     /**
      * Processes a single time interval for currency data.
      *
@@ -162,21 +164,8 @@ class CurrencyDataManagementService
      * @param \DateTime $end The end date of the interval.
      * @return array An array of CurrencyRate entities.
      */
-    private function getDataFromDb(string $fsym, string $tsym, \DateTime $start, \DateTime $end): array
-    {
-        $queryBuilder = $this->entityManager->createQueryBuilder();
-
-        $queryBuilder->select('cr')
-            ->from(CurrencyRate::class, 'cr')
-            ->where('cr.currencyPair = :currencyPair')
-            ->andWhere('cr.time BETWEEN :start AND :end')
-            ->setParameter('currencyPair', $fsym . $tsym)
-            ->setParameter('start', $start->getTimestamp())
-            ->setParameter('end', $end->getTimestamp());
-
-        $query = $queryBuilder->getQuery();
-
-        return $query->getResult();
+    private function getDataFromDb(string $fsym, string $tsym, \DateTime $start, \DateTime $end): array {
+        return $this->currencyRateRepository->findCurrencyData($fsym, $tsym, $start, $end);
     }
 
     /**
@@ -191,19 +180,7 @@ class CurrencyDataManagementService
      */
     private function dataExistsInDb(string $fsym, string $tsym, \DateTime $start, \DateTime $end): bool
     {
-        $qb = $this->entityManager->createQueryBuilder();
-        $qb->select('count(cr.id)')
-            ->from(CurrencyRate::class, 'cr')
-            ->where('cr.currencyPair = :pair AND cr.time BETWEEN :start AND :end')
-            ->setParameter('pair', $fsym.$tsym)
-            ->setParameter('start', $start->getTimestamp())
-            ->setParameter('end', $end->getTimestamp());
-
-        try {
-            $count = $qb->getQuery()->getSingleScalarResult();
-        } catch (NoResultException|NonUniqueResultException $e) {
-        }
-        return $count > 0;
+        return $this->currencyRateRepository->dataExists($fsym, $tsym, $start, $end);
     }
     /**
      * Saves currency data to the database.
@@ -212,24 +189,23 @@ class CurrencyDataManagementService
      * @param string $fsym The symbol of the from currency.
      * @param string $tsym The symbol of the to currency.
      */
-    private function saveDataToDb(array $data, string $fsym, string $tsym): void
-    {
+    private function saveDataToDb(array $data, string $fsym, string $tsym): void {
         foreach ($data as $dataItem) {
-            if ($this->dataExistsInDb($fsym, $tsym, (new \DateTime())->setTimestamp($dataItem['time']), (new \DateTime())->setTimestamp($dataItem['time']))) {
-                $this->logger->info("Data for timestamp {$dataItem['time']} already exists. Skipping.");
-                continue;
-            }
-            $currencyRate = new CurrencyRate();
-            $currencyRate->setTime($dataItem['time'])
-                ->setHigh($dataItem['high'])
-                ->setLow($dataItem['low'])
-                ->setOpen($dataItem['open'])
-                ->setClose($dataItem['close'])
-                ->setVolumeFrom($dataItem['volumefrom'])
-                ->setCurrencyPair($fsym . $tsym);
+            if (!$this->dataExistsInDb($fsym, $tsym, (new \DateTime())->setTimestamp($dataItem['time']), (new \DateTime())->setTimestamp($dataItem['time']))) {
+                $currencyRate = new CurrencyRate();
+                $currencyRate->setTime($dataItem['time'])
+                    ->setHigh($dataItem['high'])
+                    ->setLow($dataItem['low'])
+                    ->setOpen($dataItem['open'])
+                    ->setClose($dataItem['close'])
+                    ->setVolumeFrom($dataItem['volumefrom'])
+                    ->setCurrencyPair($fsym . $tsym);
 
-            $this->entityManager->persist($currencyRate);
-            $this->logger->info("Saving new data for timestamp {$dataItem['time']}");
+                $this->entityManager->persist($currencyRate);
+                $this->logger->info("Saving new data for timestamp {$dataItem['time']}");
+            } else {
+                $this->logger->info("Data for timestamp {$dataItem['time']} already exists. Skipping.");
+            }
         }
         $this->entityManager->flush();
     }
