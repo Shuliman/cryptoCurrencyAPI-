@@ -2,6 +2,7 @@
 namespace App\Service;
 
 use App\Entity\CurrencyRate;
+use App\Service\Interface\DataSaverInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Ds\Set;
 use Psr\Log\LoggerInterface;
@@ -24,6 +25,7 @@ class CurrencyDataManagementService
         private CryptoCurrencyApiService $apiService,
         private CurrencyRateRepository   $currencyRateRepository,
         private EntityManagerInterface   $entityManager,
+        private DataSaverInterface       $dataSaver,
         private LoggerInterface          $logger
     )
     {
@@ -79,7 +81,7 @@ class CurrencyDataManagementService
         if ($apiResult['success']) {
             $this->entityManager->beginTransaction();
             try {
-                $this->saveDataToDb($apiResult['data'], $fsym, $tsym);
+                $this->dataSaver->saveData($apiResult['data'], $fsym, $tsym);
                 $this->entityManager->commit();
             } catch (\Exception $e) {
                 $this->entityManager->rollback();
@@ -91,7 +93,6 @@ class CurrencyDataManagementService
             throw new \Exception("API error: " . $apiResult['error']);
         }
     }
-
     /**
      * Identifies missing intervals of data between two dates.
      *
@@ -131,32 +132,5 @@ class CurrencyDataManagementService
         }
 
         return $missingIntervals;
-    }
-    /**
-     * Saves currency data to the database.
-     *
-     * @param array $data The array of currency data to save.
-     * @param string $fsym The symbol of the from currency.
-     * @param string $tsym The symbol of the to currency.
-     */
-    private function saveDataToDb(array $data, string $fsym, string $tsym): void {
-        foreach ($data as $dataItem) {
-            if (!$this->currencyRateRepository->dataExists($fsym, $tsym, (new \DateTime())->setTimestamp($dataItem['time']), (new \DateTime())->setTimestamp($dataItem['time']))) {
-                $currencyRate = new CurrencyRate();
-                $currencyRate->setTime($dataItem['time'])
-                    ->setHigh($dataItem['high'])
-                    ->setLow($dataItem['low'])
-                    ->setOpen($dataItem['open'])
-                    ->setClose($dataItem['close'])
-                    ->setVolumeFrom($dataItem['volumefrom'])
-                    ->setCurrencyPair($fsym . $tsym);
-
-                $this->entityManager->persist($currencyRate);
-                $this->logger->info("Saving new data for timestamp {$dataItem['time']}");
-            } else {
-                $this->logger->info("Data for timestamp {$dataItem['time']} already exists. Skipping.");
-            }
-        }
-        $this->entityManager->flush();
     }
 }
