@@ -1,7 +1,6 @@
 <?php
 namespace App\Service;
 
-use App\Entity\CurrencyRate;
 use App\Service\Interface\DataSaverInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Ds\Set;
