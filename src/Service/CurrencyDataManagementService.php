@@ -109,7 +109,7 @@ class CurrencyDataManagementService
         // Initialize hash set for existing intervals
         $existingIntervals = new Set();
         foreach ($existingData as $dataItem) {
-            // Add a timestamp to the hash set
+            // Add a formatted time to the hash set
             $existingIntervals->add($dataItem->getFormattedTime()->format('Y-m-d H:i:s'));
         }
 
