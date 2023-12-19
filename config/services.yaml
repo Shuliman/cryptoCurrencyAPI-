@@ -23,12 +23,17 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
     App\Service\DataSaverInterface: '@App\Service\DataSaverService'
+    App\Service\Interface\CurrencyDataUpdaterInterface: '@App\Service\CurrencyDataUpdaterService'
 
     App\Service\CryptoCurrencyApiService:
         arguments:
             $apiBaseUrl: '%crypto_compare_api_base_url%'
             $client: '@GuzzleHttp\Client'
     App\Service\CurrencyDataManagementService:
+        arguments:
+            $currencyRateRepository: '@App\Repository\CurrencyRateRepository'
+            $dataUpdater: '@App\Service\Interface\CurrencyDataUpdaterInterface'
+    App\Service\CurrencyDataUpdaterService:
         arguments:
             $apiService: '@App\Service\CryptoCurrencyApiService'
             $currencyRateRepository: '@App\Repository\CurrencyRateRepository'
