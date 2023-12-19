@@ -22,8 +22,8 @@ class DataSaverService implements DataSaverInterface
     {
         try {
             foreach ($data as $dataItem) {
-                if (!$this->currencyRateRepository->dataExists($fsym, $tsym, (new \DateTime())->setTimestamp($dataItem['time']),
-                    (new \DateTime())->setTimestamp($dataItem['time']))) {
+                $timestamp = (new \DateTime())->setTimestamp($dataItem['time']);
+                if (!$this->currencyRateRepository->dataExists($fsym, $tsym, $timestamp, $timestamp)) {
                     $currencyRate = new CurrencyRate();
                     $currencyRate->setTime($dataItem['time'])
                         ->setHigh($dataItem['high'])
