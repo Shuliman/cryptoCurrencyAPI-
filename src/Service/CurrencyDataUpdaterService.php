@@ -10,8 +10,8 @@ use Psr\Log\LoggerInterface;
 use App\Repository\CurrencyRateRepository;
 
 /**
- * Service class for managing currency data.
- * Handles interactions with cryptocurrency API, database operations, and logging.
+ * Service class for updating currency data.
+ * Handles interactions with database operations, and logging.
  */
 class CurrencyDataUpdaterService implements CurrencyDataUpdaterInterface
 {
